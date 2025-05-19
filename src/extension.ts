@@ -8,6 +8,23 @@ export function activate(context: vscode.ExtensionContext) {
     // 这对于调试和确认插件状态很有用
     console.log('Congratulations, your extension "lisp-run-button" is now active!');
 
+    // Map to store active terminals, keyed by file path
+    const activeTerminals: Map<string, vscode.Terminal> = new Map();
+
+    // Listener for when a terminal is closed by the user or programmatically
+    const closeListener = vscode.window.onDidCloseTerminal(closedTerminal => {
+        // Check if the closed terminal is one we are tracking
+        for (const [filePath, terminal] of activeTerminals.entries()) {
+            if (terminal === closedTerminal) {
+                activeTerminals.delete(filePath);
+                // Optional: console.log(`Terminal for ${filePath} closed and removed from tracking.`);
+                break;
+            }
+        }
+    });
+    // Add the listener to subscriptions for cleanup when the extension deactivates
+    context.subscriptions.push(closeListener);
+
     // 注册一个命令，命令的 ID 是 'extension.runLispScript'
     // 当用户通过命令面板或者快捷键触发这个命令时，提供的回调函数会被执行
     let disposable = vscode.commands.registerCommand('extension.runLispScript', () => {
@@ -21,13 +38,26 @@ export function activate(context: vscode.ExtensionContext) {
             editor.document.save().then(success => {
                 // 如果文件保存成功
                 if (success) {
-                    // 创建一个新的终端实例，终端的名称会显示文件的相对路径，方便用户识别
-                    const terminal = vscode.window.createTerminal(`Run Lisp: ${vscode.workspace.asRelativePath(filePath)}`);
-                    // 向终端发送命令来执行 Lisp 脚本
-                    // sbcl 是一个常见的 Common Lisp 实现，--script 参数告诉 sbcl 执行指定的脚本文件
-                    terminal.sendText(`sbcl --script "${filePath}"`);
-                    // 显示终端窗口
-                    terminal.show();
+                    let terminal: vscode.Terminal | undefined = activeTerminals.get(filePath);
+
+                    if (terminal) {
+                        // A terminal for this file path already exists. Reuse it.
+                        // Optional: console.log(`Reusing terminal for ${filePath}`);
+                        terminal.show(); // Ensure it's visible
+                        // 向终端发送命令来执行 Lisp 脚本
+                        // sbcl 是一个常见的 Common Lisp 实现，--script 参数告诉 sbcl 执行指定的脚本文件
+                        terminal.sendText(`sbcl --script "${filePath}"`);
+                    } else {
+                        // No terminal for this file path, or it was closed. Create a new one.
+                        // Optional: console.log(`Creating new terminal for ${filePath}`);
+                        // 创建一个新的终端实例，终端的名称会显示文件的相对路径，方便用户识别
+                        const newTerminal = vscode.window.createTerminal(`Run Lisp: ${vscode.workspace.asRelativePath(filePath)}`);
+                        activeTerminals.set(filePath, newTerminal);
+                        // 向终端发送命令来执行 Lisp 脚本
+                        newTerminal.sendText(`sbcl --script "${filePath}"`);
+                        // 显示终端窗口
+                        newTerminal.show();
+                    }
                 } else {
                     // 如果文件保存失败，显示错误消息
                     vscode.window.showErrorMessage('Failed to save the file before running.');
