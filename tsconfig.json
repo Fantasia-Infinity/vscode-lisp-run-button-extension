@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020", // Adjusted target for modern Node.js versions often used with VS Code extensions
+    "outDir": "out",
+    "lib": [
+      "ES2020"
+    ],
+    "sourceMap": true,
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true, // Enables esModuleInterop for better compatibility with CommonJS modules
+    "skipLibCheck": true, // Optional: Speeds up compilation by skipping type checking of declaration files
+    "forceConsistentCasingInFileNames": true // Enforces consistent casing in file names
+  },
+  "exclude": [
+    "node_modules",
+    ".vscode-test"
+  ]
+}
