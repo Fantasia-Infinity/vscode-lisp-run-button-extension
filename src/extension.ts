@@ -72,6 +72,32 @@ export function activate(context: vscode.ExtensionContext) {
     // 将注册的命令添加到插件的订阅中
     // 这样当插件被停用时，VS Code 可以自动清理这个命令相关的资源，防止内存泄漏
     context.subscriptions.push(disposable);
+
+    let disposableLoad = vscode.commands.registerCommand('extension.loadLispFile', () => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && (editor.document.languageId === 'lisp' || editor.document.languageId === 'commonlisp')) {
+            const filePath = editor.document.fileName;
+            editor.document.save().then(success => {
+                if (success) {
+                    let terminal: vscode.Terminal | undefined = activeTerminals.get(filePath);
+                    if (terminal) {
+                        terminal.show();
+                        terminal.sendText(`sbcl --load "${filePath}"`);
+                    } else {
+                        const newTerminal = vscode.window.createTerminal(`Load Lisp: ${vscode.workspace.asRelativePath(filePath)}`);
+                        activeTerminals.set(filePath, newTerminal);
+                        newTerminal.sendText(`sbcl --load "${filePath}"`);
+                        newTerminal.show();
+                    }
+                } else {
+                    vscode.window.showErrorMessage('Failed to save the file before loading.');
+                }
+            });
+        } else {
+            vscode.window.showInformationMessage('No active Lisp (.lisp or .cl) editor found, or file is not a Lisp file.');
+        }
+    });
+    context.subscriptions.push(disposableLoad);
 }
 
 // deactivate 函数在插件被停用时调用

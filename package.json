@@ -2,7 +2,7 @@
   "name": "lisp-run-button",
   "displayName": "Lisp Run Button",
   "description": "Adds a run button to the editor title bar for Lisp files.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "sbcl_run_button",
   "engines": {
     "vscode": "^1.80.0"
@@ -20,8 +20,13 @@
     "commands": [
       {
         "command": "extension.runLispScript",
-        "title": "Run Lisp File",
+        "title": "Run Lisp File (script)",
         "icon": "$(play)"
+      },
+      {
+        "command": "extension.loadLispFile",
+        "title": "Run Lisp File (load)",
+        "icon": "$(debug-alt)"
       }
     ],
     "menus": {
@@ -30,6 +35,11 @@
           "when": "resourceLangId == lisp || resourceLangId == commonlisp",
           "command": "extension.runLispScript",
           "group": "navigation@0"
+        },
+        {
+          "when": "resourceLangId == lisp || resourceLangId == commonlisp",
+          "command": "extension.loadLispFile",
+          "group": "navigation@1"
         }
       ]
     }
